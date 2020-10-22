@@ -4,7 +4,7 @@ const axios = require('axios')
 const fs = require('fs')
 
 //INSERIRE TOKEN vvv
-const BEARER_TOKEN = '';
+const BEARER_TOKEN = "";
 
 const FILTERED_STREAM_URL = 'https://api.twitter.com/2/tweets/search/stream'
 const STREAM_URL = 'https://api.twitter.com/2/tweets/sample/stream'
@@ -32,8 +32,9 @@ const RULES_CONFIG = {
 var tweet_collection = [];
 
 async function removeAllRules(){
-    //Prendo tutte le regole impostate (get)
-    axios.get(RULES_URL, RULES_CONFIG).then((res) => {
+    try {
+        //Prendo tutte le regole impostate (get)
+        let res = await axios.get(RULES_URL, RULES_CONFIG);
         rules = res.data.data;
         console.log(rules);
         //Se mi ha dato un array vuoto nessuna regola da cancellare
@@ -50,7 +51,10 @@ async function removeAllRules(){
             }).catch((err) => { console.log(err) });
         }
         else console.log('No rules to delete.');
-    }).catch((err) => { console.log(err) });
+    }
+    catch(err){
+        throw(err);
+    }
     return;
 }
 
@@ -61,11 +65,15 @@ async function setFilter(expression, name){
             {'value': expression, 'tag': name}
         ]
     };
-    //Setto il filtro delle regole
-    axios.post(RULES_URL, rules, RULES_CONFIG).then((res) => {
+    try {
+        //Setto il filtro delle regole
+        let res = await axios.post(RULES_URL, rules, RULES_CONFIG);
         console.log(`Rules set with tag ${name}.`);
         console.log(res.data);
-    }).catch((error) => { console.log(error) });
+    }
+    catch(err){
+        throw(err);
+    }
     return;
 }
 
@@ -87,14 +95,14 @@ function startStream(url){
                 }
         });
         stream.on('end', () => { console.log("Fine") });
-    });
+    }).catch((err) => { throw(err) });
 }
 
-function stdStream(){
+async function stdStream(){
     startStream(STREAM_URL);
 }
 
-function ruledStream(){
+async function ruledStream(){
     startStream(FILTERED_STREAM_URL);
 }
 
@@ -112,7 +120,9 @@ process.on('SIGINT', saveToJson);
 
 (async() => {
     await removeAllRules();
-    await setFilter('to:realdonaldtrump', 'tweets to trump');
+    await setFilter('#terremoto', 'terremoto hashtag');
+    await setFilter('#brescia', 'brescia hashtag');
+    await setFilter('terremoto brescia', 'terremoto brescia');
     ruledStream();
     //stdStream();
 })();
